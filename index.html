@@ -19,18 +19,36 @@
       --shadow: 0 18px 55px rgba(0,0,0,0.35);
       --radius: 18px;
 
-      /* Accent colour */
       --timeline-accent: #C0FF00;
       --timeline-accent-75: rgba(192, 255, 0, 0.75);
       --timeline-accent-35: rgba(192, 255, 0, 0.35);
       --timeline-accent-20: rgba(192, 255, 0, 0.20);
+
+      /* responsive sizing */
+      --pad: 16px;
+      --stage-radius: 22px;
+      --card-pad: 22px;
+      --year-size: 22px;
+      --desc-size: 16px;
+      --min-stage: 320px;
+
+      --handle: 46px;
+      --connector-h: 86px;
+      --connector-line-h: 64px;
+
+      /* timeline geometry */
+      --spine-x: 18px;         /* line x inside grid */
+      --grid-pad-left: 36px;   /* content padding to clear the line */
+      --pin: 12px;
+      --pin-border: 2px;
+      --pin-top: 24px;         /* aligns with mini card heading */
     }
 
     *{ box-sizing:border-box; }
 
     body{
       margin:0;
-      min-height:100vh;
+      min-height:100svh;
       display:grid;
       place-items:center;
       background: radial-gradient(1200px 800px at 20% 10%, rgba(192,255,0,0.10), transparent 60%),
@@ -77,6 +95,7 @@
       padding: 8px 12px;
       font-size: 13px;
       cursor:pointer;
+      white-space: nowrap;
     }
     .ghostBtn:focus-visible{
       outline: 3px solid rgba(255,255,255,0.75);
@@ -85,12 +104,13 @@
 
     .stage{
       position: relative;
-      padding: 22px 16px 18px;
-      border-radius: 22px;
+      padding: calc(var(--pad) + 6px) var(--pad) calc(var(--pad) + 2px);
+      border-radius: var(--stage-radius);
       border: 1px solid rgba(255,255,255,0.10);
       background: rgba(255,255,255,0.03);
       box-shadow: var(--shadow);
       overflow:hidden;
+      min-height: var(--min-stage);
     }
 
     /* Progress */
@@ -133,7 +153,7 @@
     /* Single card view */
     .singleView{
       position: relative;
-      min-height: 360px;
+      min-height: 340px;
       display:grid;
       place-items:center;
       padding: 10px 0 0;
@@ -152,7 +172,7 @@
       background: var(--card);
       color: var(--text);
       box-shadow: 0 18px 45px rgba(0,0,0,0.25);
-      padding: 22px 22px 20px;
+      padding: var(--card-pad);
       border: 1px solid rgba(15, 23, 42, 0.08);
     }
 
@@ -162,20 +182,21 @@
       letter-spacing: 0.08em;
       text-transform: uppercase;
       margin: 0 0 10px;
-      font-size: 22px;
+      font-size: var(--year-size);
+      line-height: 1.15;
     }
 
     .desc{
       margin: 0;
       color: var(--muted);
-      font-size: 16px;
+      font-size: var(--desc-size);
       line-height: 1.55;
     }
 
-    /* Connector line and arrow button */
+    /* Connector */
     .connector{
       position: relative;
-      height: 86px;
+      height: var(--connector-h);
       width: 100%;
       display:grid;
       place-items:center;
@@ -187,12 +208,11 @@
       top: 0;
       left: 50%;
       width: 2px;
-      height: 64px;
+      height: var(--connector-line-h);
       transform: translateX(-50%);
       background: rgba(255,255,255,0.18);
     }
 
-    /* Keep the single-step connector neon too */
     .lineFill{
       position:absolute;
       top: 0;
@@ -209,8 +229,8 @@
       bottom: 0;
       left: 50%;
       transform: translateX(-50%);
-      width: 46px;
-      height: 46px;
+      width: var(--handle);
+      height: var(--handle);
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.28);
       background: rgba(255,255,255,0.10);
@@ -220,6 +240,7 @@
       display:grid;
       place-items:center;
       box-shadow: 0 16px 35px rgba(0,0,0,0.25);
+      touch-action: manipulation;
     }
     .arrowBtn:hover{ background: rgba(255,255,255,0.14); }
     .arrowBtn:active{ transform: translateX(-50%) scale(0.98); }
@@ -265,10 +286,10 @@
     .lineFill.isDrawing{ animation: drawLine 320ms ease forwards; }
     @keyframes drawLine{
       from{ height: 0; }
-      to{ height: 64px; }
+      to{ height: var(--connector-line-h); }
     }
 
-    /* Full timeline view */
+    /* Full timeline */
     .fullView{
       display:none;
       margin-top: 10px;
@@ -280,25 +301,19 @@
       position: relative;
       display:grid;
       gap: 18px;
-      padding-left: 36px;
+      padding-left: var(--grid-pad-left);
     }
 
-    /* Ensure spine stays behind pins */
     .spine, .spineFill{
       position:absolute;
-      left: 18px;
+      left: var(--spine-x);
       top: 0;
       bottom: 0;
       width: 2px;
       z-index: 1;
     }
 
-    /* Timeline line colour */
-    .spine{
-      background: var(--timeline-accent);
-      opacity: 1;
-    }
-
+    .spine{ background: var(--timeline-accent); }
     .spineFill{
       top: 0;
       height: 0;
@@ -313,27 +328,24 @@
       z-index: 2;
     }
 
-    /* Pins: centred on the spine line and brought to the front */
+    /* Pin centered on spine:
+       grid has padding-left, so spine is at x = --spine-x,
+       eventRow starts at x=0 within the padded area
+       => pin left = spineX - (pin/2) */
     .pin{
       position:absolute;
-      left: -24px;
-      top: 24px;
+      left: calc(var(--spine-x) - (var(--pin) / 2));
+      top: var(--pin-top);
 
-      width: 12px;
-      height: 12px;
+      width: var(--pin);
+      height: var(--pin);
       border-radius: 999px;
 
       background: var(--timeline-accent-75);
-      border: 2px solid var(--timeline-accent-75);
+      border: var(--pin-border) solid var(--timeline-accent-75);
 
       z-index: 3;
       box-shadow: 0 0 18px rgba(192,255,0,0.25);
-    }
-
-    .pin.isAccent{
-      background: var(--timeline-accent-75);
-      border-color: var(--timeline-accent-75);
-      box-shadow: 0 0 18px rgba(192,255,0,0.35);
     }
 
     .miniCard{
@@ -354,6 +366,7 @@
       text-transform: uppercase;
       margin: 0 0 8px;
       font-size: 18px;
+      line-height: 1.15;
     }
 
     .miniDesc{
@@ -372,7 +385,6 @@
     .showFull .singleView{ display:none; }
     .showFull .fullView{ display:block; }
 
-    /* Animate full spine fill */
     .spineFill.isDrawingFull{ animation: drawFull 520ms ease forwards; }
     @keyframes drawFull{
       from{ height: 0; }
@@ -382,9 +394,43 @@
     /* Reduced motion */
     @media (prefers-reduced-motion: reduce){
       .card.isLeaving, .card.isEntering{ animation: none; }
-      .lineFill.isDrawing{ animation: none; height: 64px; }
+      .lineFill.isDrawing{ animation: none; height: var(--connector-line-h); }
       .spineFill.isDrawingFull{ animation: none; height: 100%; }
       .miniCard{ transition: none; }
+    }
+
+    /* ---- Responsive tweaks ---- */
+    @media (max-width: 720px){
+      body{ padding: 16px; }
+      :root{
+        --pad: 14px;
+        --stage-radius: 18px;
+        --card-pad: 18px;
+        --year-size: 20px;
+        --desc-size: 15px;
+        --connector-h: 78px;
+        --connector-line-h: 58px;
+      }
+      .arrowIcon{ width: 20px; height: 20px; }
+      .miniYear{ font-size: 17px; }
+      .miniDesc{ font-size: 14.5px; }
+    }
+
+    @media (max-width: 420px){
+      :root{
+        --pad: 12px;
+        --card-pad: 16px;
+        --year-size: 18px;
+        --desc-size: 14.5px;
+        --handle: 44px;
+        --connector-h: 74px;
+        --connector-line-h: 54px;
+        --grid-pad-left: 30px;
+        --spine-x: 14px;
+        --pin: 11px;
+        --pin-top: 22px;
+      }
+      .dot{ width: 7px; height: 7px; }
     }
   </style>
 </head>
@@ -537,7 +583,6 @@
 
         const pin = document.createElement("div");
         pin.className = "pin";
-        if(i === events.length - 1) pin.classList.add("isAccent");
         pin.setAttribute("aria-hidden", "true");
 
         const mini = document.createElement("article");
@@ -613,6 +658,14 @@
     nextBtn.addEventListener("click", transitionToNext);
     restartBtn.addEventListener("click", restart);
     skipBtn.addEventListener("click", showFullTimeline);
+
+    // Optional: keep the focused element visible when switching orientation / small screens
+    window.addEventListener("resize", () => {
+      // No layout JS needed because CSS handles responsiveness, but this prevents odd scroll jumps.
+      if(document.activeElement && typeof document.activeElement.scrollIntoView === "function"){
+        document.activeElement.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
+    });
 
     setCardContent();
   </script>
