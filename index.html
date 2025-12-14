@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Clickable Timeline</title>
 
-  <!-- Oswald for headings -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet">
@@ -21,10 +20,8 @@
 
       --timeline-accent: #C0FF00;
       --timeline-accent-75: rgba(192, 255, 0, 0.75);
-      --timeline-accent-35: rgba(192, 255, 0, 0.35);
       --timeline-accent-20: rgba(192, 255, 0, 0.20);
 
-      /* responsive sizing */
       --pad: 16px;
       --stage-radius: 22px;
       --card-pad: 22px;
@@ -36,12 +33,12 @@
       --connector-h: 86px;
       --connector-line-h: 64px;
 
-      /* timeline geometry */
-      --spine-x: 18px;         /* line x inside grid */
-      --grid-pad-left: 36px;   /* content padding to clear the line */
+      /* Full timeline geometry */
+      --spine-x: 18px;         /* x of spine inside timelineGrid */
+      --grid-pad-left: 36px;   /* gutter for spine + pins */
       --pin: 12px;
       --pin-border: 2px;
-      --pin-top: 24px;         /* aligns with mini card heading */
+      --pin-top: 24px;
     }
 
     *{ box-sizing:border-box; }
@@ -59,9 +56,7 @@
       font-family: Arial, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
     }
 
-    .wrap{
-      width: min(980px, 96vw);
-    }
+    .wrap{ width: min(980px, 96vw); }
 
     .toolbar{
       display:flex;
@@ -113,7 +108,6 @@
       min-height: var(--min-stage);
     }
 
-    /* Progress */
     .progressRow{
       display:flex;
       align-items:center;
@@ -150,7 +144,6 @@
       box-shadow: 0 0 16px rgba(192,255,0,0.18);
     }
 
-    /* Single card view */
     .singleView{
       position: relative;
       min-height: 340px;
@@ -193,7 +186,6 @@
       line-height: 1.55;
     }
 
-    /* Connector */
     .connector{
       position: relative;
       height: var(--connector-h);
@@ -244,7 +236,6 @@
     }
     .arrowBtn:hover{ background: rgba(255,255,255,0.14); }
     .arrowBtn:active{ transform: translateX(-50%) scale(0.98); }
-
     .arrowBtn:focus-visible{
       outline: 3px solid rgba(255,255,255,0.75);
       outline-offset: 3px;
@@ -269,7 +260,6 @@
       border:0;
     }
 
-    /* Card transition */
     .card.isLeaving{ animation: leave 320ms ease forwards; }
     .card.isEntering{ animation: enter 320ms ease forwards; }
 
@@ -282,14 +272,12 @@
       to{ transform: translateY(0); opacity: 1; }
     }
 
-    /* Line draw animation */
     .lineFill.isDrawing{ animation: drawLine 320ms ease forwards; }
     @keyframes drawLine{
       from{ height: 0; }
       to{ height: var(--connector-line-h); }
     }
 
-    /* Full timeline */
     .fullView{
       display:none;
       margin-top: 10px;
@@ -304,21 +292,21 @@
       padding-left: var(--grid-pad-left);
     }
 
+    /* Spine is drawn only between first and last pin via JS */
     .spine, .spineFill{
       position:absolute;
       left: var(--spine-x);
-      top: 0;
-      bottom: 0;
       width: 2px;
       z-index: 1;
+      top: 0;
+      height: 0;
     }
 
     .spine{ background: var(--timeline-accent); }
     .spineFill{
-      top: 0;
-      height: 0;
       background: var(--timeline-accent);
       box-shadow: 0 0 18px rgba(192,255,0,0.35);
+      height: 0;
     }
 
     .eventRow{
@@ -328,13 +316,11 @@
       z-index: 2;
     }
 
-    /* Pin centered on spine:
-       grid has padding-left, so spine is at x = --spine-x,
-       eventRow starts at x=0 within the padded area
-       => pin left = spineX - (pin/2) */
+    /* Key fix: pin is positioned in the gutter, centred on the spine,
+       using spine-x minus the grid padding */
     .pin{
       position:absolute;
-      left: calc(var(--spine-x) - (var(--pin) / 2));
+      left: calc((var(--spine-x) - var(--grid-pad-left)) - (var(--pin) / 2));
       top: var(--pin-top);
 
       width: var(--pin);
@@ -385,21 +371,12 @@
     .showFull .singleView{ display:none; }
     .showFull .fullView{ display:block; }
 
-    .spineFill.isDrawingFull{ animation: drawFull 520ms ease forwards; }
-    @keyframes drawFull{
-      from{ height: 0; }
-      to{ height: 100%; }
-    }
-
-    /* Reduced motion */
     @media (prefers-reduced-motion: reduce){
       .card.isLeaving, .card.isEntering{ animation: none; }
       .lineFill.isDrawing{ animation: none; height: var(--connector-line-h); }
-      .spineFill.isDrawingFull{ animation: none; height: 100%; }
       .miniCard{ transition: none; }
     }
 
-    /* ---- Responsive tweaks ---- */
     @media (max-width: 720px){
       body{ padding: 16px; }
       :root{
@@ -425,6 +402,7 @@
         --handle: 44px;
         --connector-h: 74px;
         --connector-line-h: 54px;
+
         --grid-pad-left: 30px;
         --spine-x: 14px;
         --pin: 11px;
@@ -453,8 +431,7 @@
 
       <div class="srOnly" id="live" aria-live="polite"></div>
 
-      <!-- Single card view -->
-      <div class="singleView" id="singleView">
+      <div class="singleView">
         <div class="cardShell" aria-label="Current timeline event">
           <article class="card" id="card" tabindex="-1">
             <h2 class="year" id="year">YEAR</h2>
@@ -475,12 +452,10 @@
         </div>
       </div>
 
-      <!-- Full timeline view -->
       <div class="fullView" id="fullView" aria-label="Full timeline">
         <div class="timelineGrid" id="timelineGrid">
-          <div class="spine"></div>
+          <div class="spine" id="spine"></div>
           <div class="spineFill" id="spineFill" aria-hidden="true"></div>
-          <!-- events injected here -->
         </div>
       </div>
     </section>
@@ -509,6 +484,7 @@
     const skipBtn = document.getElementById("skipBtn");
 
     const timelineGrid = document.getElementById("timelineGrid");
+    const spine = document.getElementById("spine");
     const spineFill = document.getElementById("spineFill");
 
     let index = 0;
@@ -537,11 +513,7 @@
       renderDots();
       announce();
 
-      if(index === events.length - 1){
-        nextBtn.setAttribute("aria-label", "Show full timeline");
-      } else {
-        nextBtn.setAttribute("aria-label", "Next event");
-      }
+      nextBtn.setAttribute("aria-label", index === events.length - 1 ? "Show full timeline" : "Next event");
     }
 
     function drawConnector(){
@@ -609,6 +581,36 @@
       });
     }
 
+    function setSpineToPinsAndAnimate(){
+      const pins = timelineGrid.querySelectorAll(".pin");
+      if(!pins.length) return;
+
+      const gridRect = timelineGrid.getBoundingClientRect();
+      const first = pins[0].getBoundingClientRect();
+      const last = pins[pins.length - 1].getBoundingClientRect();
+
+      const firstCenter = (first.top - gridRect.top) + (first.height / 2);
+      const lastCenter = (last.top - gridRect.top) + (last.height / 2);
+      const h = Math.max(2, lastCenter - firstCenter);
+
+      spine.style.top = `${firstCenter}px`;
+      spine.style.height = `${h}px`;
+
+      spineFill.style.top = `${firstCenter}px`;
+      spineFill.style.height = `0px`;
+
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if(reduce){
+        spineFill.style.height = `${h}px`;
+        return;
+      }
+
+      spineFill.animate(
+        [{ height: "0px" }, { height: `${h}px` }],
+        { duration: 520, easing: "ease", fill: "forwards" }
+      );
+    }
+
     function showFullTimeline(){
       if(isBusy) return;
       isBusy = true;
@@ -616,17 +618,14 @@
       stage.classList.add("showFull");
       buildFullTimeline();
 
-      spineFill.classList.remove("isDrawingFull");
-      void spineFill.offsetWidth;
-      spineFill.classList.add("isDrawingFull");
+      requestAnimationFrame(() => {
+        setSpineToPinsAndAnimate();
+        live.textContent = "Full timeline revealed.";
 
-      live.textContent = "Full timeline revealed.";
-
-      setTimeout(() => {
-        const first = timelineGrid.querySelector(".miniCard");
-        if(first) first.focus({ preventScroll: true });
+        const firstCard = timelineGrid.querySelector(".miniCard");
+        if(firstCard) firstCard.focus({ preventScroll: true });
         isBusy = false;
-      }, 260);
+      });
     }
 
     function restart(){
@@ -655,17 +654,15 @@
       }
     });
 
+    window.addEventListener("resize", () => {
+      if(stage.classList.contains("showFull")){
+        requestAnimationFrame(setSpineToPinsAndAnimate);
+      }
+    });
+
     nextBtn.addEventListener("click", transitionToNext);
     restartBtn.addEventListener("click", restart);
     skipBtn.addEventListener("click", showFullTimeline);
-
-    // Optional: keep the focused element visible when switching orientation / small screens
-    window.addEventListener("resize", () => {
-      // No layout JS needed because CSS handles responsiveness, but this prevents odd scroll jumps.
-      if(document.activeElement && typeof document.activeElement.scrollIntoView === "function"){
-        document.activeElement.scrollIntoView({ block: "nearest", inline: "nearest" });
-      }
-    });
 
     setCardContent();
   </script>
