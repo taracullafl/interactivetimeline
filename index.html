@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Clickable Timeline</title>
+
+  <!-- Oswald for headings -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #0b0f17;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: rgba(15, 23, 42, 0.72);
+      --shadow: 0 18px 55px rgba(0,0,0,0.35);
+      --radius: 18px;
+      --line: rgba(255,255,255,0.22);
+      --accent: rgba(61, 214, 208, 0.95); /* teal */
+      --focus: #ffffff;
+      --max: 980px;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(61,214,208,0.15), transparent 60%),
+                  radial-gradient(1200px 800px at 80% 90%, rgba(255,111,174,0.10), transparent 60%),
+                  var(--bg);
+      color: #e9eef7;
+      padding: 24px;
+      font-family: Arial, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    }
+
+    .wrap{
+      width: min(var(--max), 96vw);
+    }
+
+    .toolbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin: 0 0 12px;
+    }
+
+    .title{
+      margin:0;
+      font-size: 14px;
+      opacity: 0.9;
+      letter-spacing: 0.02em;
+    }
+
+    .controls{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+    }
+
+    .ghostBtn{
+      appearance:none;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.92);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor:pointer;
+    }
+    .ghostBtn:focus-visible{
+      outline: 3px solid rgba(255,255,255,0.75);
+      outline-offset: 2px;
+    }
+
+    .stage{
+      position: relative;
+      padding: 22px 16px 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.03);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    /* Progress */
+    .progressRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin: 0 0 14px;
+    }
+
+    .progressText{
+      font-size: 13px;
+      opacity: 0.85;
+      margin:0;
+    }
+
+    .dots{
+      display:flex;
+      gap: 8px;
+      align-items:center;
+    }
+    .dot{
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.22);
+    }
+    .dot.isActive{ background: var(--accent); }
+    .dot.isDone{ background: rgba(255,255,255,0.55); }
+
+    /* Single card view */
+    .singleView{
+      position: relative;
+      min-height: 360px;
+      display:grid;
+      place-items:center;
+      padding: 10px 0 0;
+    }
+
+    .cardShell{
+      width: min(760px, 100%);
+      position: relative;
+      display:grid;
+      place-items:center;
+    }
+
+    .card{
+      width: 100%;
+      border-radius: var(--radius);
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 18px 45px rgba(0,0,0,0.25);
+      padding: 22px 22px 20px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    .year{
+      font-family: "Oswald", Arial, sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0 0 10px;
+      font-size: 22px;
+    }
+
+    .desc{
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    /* Connector line and arrow button */
+    .connector{
+      position: relative;
+      height: 86px;
+      width: 100%;
+      display:grid;
+      place-items:center;
+      margin-top: 10px;
+    }
+
+    .lineTrack{
+      position:absolute;
+      top: 0;
+      left: 50%;
+      width: 2px;
+      height: 64px;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.18);
+    }
+
+    .lineFill{
+      position:absolute;
+      top: 0;
+      left: 50%;
+      width: 2px;
+      height: 0;
+      transform: translateX(-50%);
+      background: var(--accent);
+      box-shadow: 0 0 18px rgba(61,214,208,0.35);
+    }
+
+    .arrowBtn{
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.10);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      cursor: pointer;
+      display:grid;
+      place-items:center;
+      box-shadow: 0 16px 35px rgba(0,0,0,0.25);
+    }
+    .arrowBtn:hover{ background: rgba(255,255,255,0.14); }
+    .arrowBtn:active{ transform: translateX(-50%) scale(0.98); }
+
+    .arrowBtn:focus-visible{
+      outline: 3px solid rgba(255,255,255,0.75);
+      outline-offset: 3px;
+    }
+
+    .arrowIcon{
+      width: 22px;
+      height: 22px;
+      opacity: 0.95;
+      filter: drop-shadow(0 2px 10px rgba(0,0,0,0.35));
+    }
+
+    .srOnly{
+      position:absolute;
+      width:1px;
+      height:1px;
+      padding:0;
+      margin:-1px;
+      overflow:hidden;
+      clip:rect(0,0,0,0);
+      white-space:nowrap;
+      border:0;
+    }
+
+    /* Card transition */
+    .card.isLeaving{
+      animation: leave 320ms ease forwards;
+    }
+    .card.isEntering{
+      animation: enter 320ms ease forwards;
+    }
+
+    @keyframes leave{
+      from{ transform: translateY(0); opacity: 1; }
+      to{ transform: translateY(-14px); opacity: 0; }
+    }
+    @keyframes enter{
+      from{ transform: translateY(14px); opacity: 0; }
+      to{ transform: translateY(0); opacity: 1; }
+    }
+
+    /* Line draw animation */
+    .lineFill.isDrawing{
+      animation: drawLine 320ms ease forwards;
+    }
+    @keyframes drawLine{
+      from{ height: 0; }
+      to{ height: 64px; }
+    }
+
+    /* Full timeline view */
+    .fullView{
+      display:none;
+      margin-top: 10px;
+      position: relative;
+      padding: 10px 0 2px;
+    }
+
+    .timelineGrid{
+      position: relative;
+      display:grid;
+      gap: 18px;
+      padding-left: 36px;
+    }
+
+    .spine{
+      position:absolute;
+      left: 18px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(255,255,255,0.18);
+    }
+    .spineFill{
+      position:absolute;
+      left: 18px;
+      top: 0;
+      width: 2px;
+      height: 0;
+      background: var(--accent);
+      box-shadow: 0 0 18px rgba(61,214,208,0.35);
+    }
+
+    .eventRow{
+      position: relative;
+      display:grid;
+      gap: 10px;
+    }
+
+    .pin{
+      position:absolute;
+      left: -26px;
+      top: 24px;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.55);
+      border: 2px solid rgba(255,255,255,0.22);
+    }
+    .pin.isAccent{
+      background: var(--accent);
+      border-color: rgba(255,255,255,0.18);
+      box-shadow: 0 0 18px rgba(61,214,208,0.35);
+    }
+
+    .miniCard{
+      border-radius: var(--radius);
+      background: var(--card);
+      color: var(--text);
+      padding: 18px 18px 16px;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 14px 34px rgba(0,0,0,0.20);
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    .miniYear{
+      font-family: "Oswald", Arial, sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .miniDesc{
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .miniCard.isReveal{
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 260ms ease, transform 260ms ease;
+    }
+
+    .showFull .singleView{ display:none; }
+    .showFull .fullView{ display:block; }
+
+    /* Animate full spine fill */
+    .spineFill.isDrawingFull{
+      animation: drawFull 520ms ease forwards;
+    }
+    @keyframes drawFull{
+      from{ height: 0; }
+      to{ height: 100%; }
+    }
+
+    /* Modern UX: reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      .card.isLeaving, .card.isEntering{ animation: none; }
+      .lineFill.isDrawing{ animation: none; height: 64px; }
+      .spineFill.isDrawingFull{ animation: none; height: 100%; }
+      .miniCard{ transition: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <p class="title">Clickable timeline</p>
+      <div class="controls">
+        <button class="ghostBtn" id="restartBtn" type="button">Restart</button>
+        <button class="ghostBtn" id="skipBtn" type="button">Show full timeline</button>
+      </div>
+    </div>
+
+    <section class="stage" aria-label="Timeline interaction">
+      <div class="progressRow" aria-hidden="false">
+        <p class="progressText" id="progressText">Event 1 of 5</p>
+        <div class="dots" id="dots" aria-label="Progress indicator"></div>
+      </div>
+
+      <!-- Announcements for screen readers -->
+      <div class="srOnly" id="live" aria-live="polite"></div>
+
+      <!-- Single card view -->
+      <div class="singleView" id="singleView">
+        <div class="cardShell" aria-label="Current timeline event">
+          <article class="card" id="card" tabindex="-1">
+            <h2 class="year" id="year">YEAR</h2>
+            <p class="desc" id="desc">Description placeholder text.</p>
+          </article>
+
+          <div class="connector" aria-hidden="false">
+            <div class="lineTrack"></div>
+            <div class="lineFill" id="lineFill"></div>
+
+            <button class="arrowBtn" id="nextBtn" type="button" aria-label="Next event">
+              <svg class="arrowIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 5v12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                <path d="M7 13l5 5 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full timeline view -->
+      <div class="fullView" id="fullView" aria-label="Full timeline">
+        <div class="timelineGrid" id="timelineGrid">
+          <div class="spine"></div>
+          <div class="spineFill" id="spineFill" aria-hidden="true"></div>
+          <!-- events injected here -->
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const events = [
+      { year: "YEAR 1", desc: "Placeholder description for the first milestone. Keep it short and clear." },
+      { year: "YEAR 2", desc: "Placeholder description for the second milestone. What changed and why it mattered." },
+      { year: "YEAR 3", desc: "Placeholder description for the third milestone. Add one key detail only." },
+      { year: "YEAR 4", desc: "Placeholder description for the fourth milestone. Keep the language learner friendly." },
+      { year: "YEAR 5", desc: "Placeholder description for the fifth milestone. This completes the journey." }
+    ];
+
+    const stage = document.querySelector(".stage");
+    const card = document.getElementById("card");
+    const yearEl = document.getElementById("year");
+    const descEl = document.getElementById("desc");
+    const nextBtn = document.getElementById("nextBtn");
+    const progressText = document.getElementById("progressText");
+    const dotsWrap = document.getElementById("dots");
+    const live = document.getElementById("live");
+    const lineFill = document.getElementById("lineFill");
+
+    const restartBtn = document.getElementById("restartBtn");
+    const skipBtn = document.getElementById("skipBtn");
+
+    const fullView = document.getElementById("fullView");
+    const timelineGrid = document.getElementById("timelineGrid");
+    const spineFill = document.getElementById("spineFill");
+
+    let index = 0;
+    let isBusy = false;
+
+    function renderDots(){
+      dotsWrap.innerHTML = "";
+      for(let i = 0; i < events.length; i++){
+        const d = document.createElement("div");
+        d.className = "dot";
+        if(i < index) d.classList.add("isDone");
+        if(i === index) d.classList.add("isActive");
+        d.setAttribute("aria-hidden", "true");
+        dotsWrap.appendChild(d);
+      }
+    }
+
+    function announce(){
+      const msg = `${events[index].year}. Event ${index + 1} of ${events.length}.`;
+      live.textContent = msg;
+    }
+
+    function setCardContent(){
+      yearEl.textContent = events[index].year;
+      descEl.textContent = events[index].desc;
+      progressText.textContent = `Event ${index + 1} of ${events.length}`;
+      renderDots();
+      announce();
+
+      if(index === events.length - 1){
+        nextBtn.setAttribute("aria-label", "Show full timeline");
+      } else {
+        nextBtn.setAttribute("aria-label", "Next event");
+      }
+    }
+
+    function drawConnector(){
+      lineFill.classList.remove("isDrawing");
+      void lineFill.offsetWidth;
+      lineFill.classList.add("isDrawing");
+    }
+
+    function transitionToNext(){
+      if(isBusy) return;
+      if(index === events.length - 1){
+        showFullTimeline();
+        return;
+      }
+
+      isBusy = true;
+
+      drawConnector();
+      card.classList.remove("isEntering");
+      card.classList.add("isLeaving");
+
+      setTimeout(() => {
+        index += 1;
+        setCardContent();
+
+        card.classList.remove("isLeaving");
+        card.classList.add("isEntering");
+
+        // Move focus to the updated card for keyboard and screen reader users
+        card.focus({ preventScroll: true });
+
+        setTimeout(() => { isBusy = false; }, 40);
+      }, 320);
+    }
+
+    function buildFullTimeline(){
+      // Remove existing injected rows (keep spine elements)
+      Array.from(timelineGrid.querySelectorAll(".eventRow")).forEach(n => n.remove());
+
+      events.forEach((ev, i) => {
+        const row = document.createElement("div");
+        row.className = "eventRow";
+
+        const pin = document.createElement("div");
+        pin.className = "pin";
+        if(i === events.length - 1) pin.classList.add("isAccent");
+        pin.setAttribute("aria-hidden", "true");
+
+        const mini = document.createElement("article");
+        mini.className = "miniCard";
+        mini.setAttribute("tabindex", "0");
+        mini.setAttribute("aria-label", `${ev.year}. ${ev.desc}`);
+
+        const h = document.createElement("h3");
+        h.className = "miniYear";
+        h.textContent = ev.year;
+
+        const p = document.createElement("p");
+        p.className = "miniDesc";
+        p.textContent = ev.desc;
+
+        mini.appendChild(h);
+        mini.appendChild(p);
+
+        row.appendChild(pin);
+        row.appendChild(mini);
+        timelineGrid.appendChild(row);
+
+        // stagger reveal
+        setTimeout(() => mini.classList.add("isReveal"), 90 + i * 80);
+      });
+    }
+
+    function showFullTimeline(){
+      if(isBusy) return;
+      isBusy = true;
+
+      stage.classList.add("showFull");
+      buildFullTimeline();
+
+      spineFill.classList.remove("isDrawingFull");
+      void spineFill.offsetWidth;
+      spineFill.classList.add("isDrawingFull");
+
+      live.textContent = "Full timeline revealed.";
+
+      // Focus first full timeline card
+      setTimeout(() => {
+        const first = timelineGrid.querySelector(".miniCard");
+        if(first) first.focus({ preventScroll: true });
+        isBusy = false;
+      }, 260);
+    }
+
+    function restart(){
+      if(isBusy) return;
+      isBusy = true;
+
+      stage.classList.remove("showFull");
+      index = 0;
+      setCardContent();
+      card.focus({ preventScroll: true });
+      live.textContent = "Timeline restarted.";
+      setTimeout(() => { isBusy = false; }, 60);
+    }
+
+    // Keyboard support: Right arrow, Down arrow, Enter, Space for next
+    document.addEventListener("keydown", (e) => {
+      const inSingle = !stage.classList.contains("showFull");
+      if(!inSingle) return;
+
+      if(e.key === "ArrowRight" || e.key === "ArrowDown"){
+        e.preventDefault();
+        transitionToNext();
+      }
+      if((e.key === "Enter" || e.key === " ") && document.activeElement === nextBtn){
+        e.preventDefault();
+        transitionToNext();
+      }
+    });
+
+    nextBtn.addEventListener("click", transitionToNext);
+    restartBtn.addEventListener("click", restart);
+    skipBtn.addEventListener("click", showFullTimeline);
+
+    // Init
+    setCardContent();
+  </script>
+</body>
+</html>
